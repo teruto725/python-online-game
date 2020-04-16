@@ -1,15 +1,13 @@
 import random as rd
 
 class Nothanks:
-    self.players = []
-    self.coins = 25
-    self.tcon
-    self.dec#デッキ
-    self.fieldcard = 0
-    self.fieldcoin = 0
+    players = []
+    coins = 25
+    fieldcard = 0
+    fieldcoin = 0
     def add_player(name):#add player
-        players.append(Player(name,coins))
-        return ("add player"+players[-1].name)
+        self.players.append(Player(name,self.coins))
+        return ("add player"+self.players[-1].name)
 
     def startgame():#gamestart
         if len(players) < 2:
@@ -43,7 +41,7 @@ class Nothanks:
 
 class TurnController:
     self.count = -1
-    self.players = 0:
+    self.players = 0
     def __init__(self,players):
         self.players =players
     def getNextPlayer():#次の手番の人を返す
