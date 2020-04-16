@@ -13,6 +13,10 @@ print('Waiting for connections...')
 clientsock, client_address = serversock.accept() #接続されればデータを格納
 
 while True:
+    
+
+
+while True:
     rcvmsg = clientsock.recv(1024)
     print('Received -> %s' % (rcvmsg))
     if rcvmsg == '':

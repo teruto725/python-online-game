@@ -1,93 +1,135 @@
-import random as rd
+import random
 
-class Nothanks:
-    players = []
-    coins = 25
-    fieldcard = 0
-    fieldcoin = 0
-    def add_player(name):#add player
-        self.players.append(Player(name,self.coins))
+class Nothanks():
+    def __init__(self):
+        self.initcoins = 25 #playerの初期コイン数
+        self.delcardnum =3 #デッキから抜くカード数
+        self.players = []
+        self.fieldcard = 0
+        self.fieldcoins = 0
+    def addPlayer(self,name):#add player
+        self.players.append(Player(name,self.initcoins))
         return ("add player"+self.players[-1].name)
-
-    def startgame():#gamestart
-        if len(players) < 2:
+    def startGame(self):#gamestart
+        if len(self.players) < 2:
             return "players are not enougth"
         else:
-            tcon = TurnController(players)
-            self.dec = Dec()#prepare
-            self.fieldcard = dec.draw()#initial card
+            self.tcon = TurnController(self.players)
+            self.deck = Deck(self.delcardnum)#prepare
+            self.fieldcard = self.deck.draw()#initial card
             return "game start"
-
-    def nextTurn():#go to next turn
-        tcon.getNextPlayer()#tebansusumeru 
-        if dec.draw == "no cards":
-            return "game is end"
+    def nextTurn(self):#go to next turn
+        if self.deck.draw() == "No cards":
+            return "Game is end"
         else:
-            fieldcard = dec.draw()
-            return "next turn ok"
-    
-    def action(action):#player do action
-        if action == "pick":
-            player.pick(fieldcard)
-            return "pick is ok"
+            nextplayer = self.tcon.getNextPlayer()#tebansusumeru 
+            
+            return nextplayer.name   
+    def action(self,action):#player do action
+        if action == "pick":  
+            player = self.tcon.getNowPlayer()
+            player.pick(self.fieldcard,self.fieldcoins)
+            self.fieldcoins = 0
+            self.fieldcard = self.deck.draw()
+            return "Pick is ok"
         elif action == "pass":
-            player.passTurn()
-            return True
+            player = self.tcon.getNowPlayer()
+            self.fieldcoins += 1
+            if (player.passTurn()== "No coin"):
+                return "No coin"
+            else:
+                return "Pass is ok"
+        else:
+            return "Error of action's name"     
+    def getInfo(self):#jsonでゲーム情報全部返す   
+        infodict ={}
+        infodict["turnnum"] = self.tcon.getTurn()
+        infodict["turnorder"] = self.tcon.getTurnOrder()
+        infodict["rankingorder"] = [player.name for player in sorted(self.players)]
+        infodict["playerinfo"] = {}
+        for player in self.players:
+            infodict["playerinfo"][player.name] = player.getInfo()
+        infodict["deckinfo"] = self.deck.getInfo()
+        infodict["fieldinfo"] = {"fieldcard":self.fieldcard,"fieldcoins":self.fieldcoins}
+        if len(self.deck.cards) == 0:
+            infodict["gamestatus"] = "finish"
+        else :
+            infodict["gamestatus"] = "ongoing"
+        return infodict
 
-    def getInfo():#jsonでゲーム情報全部返す
-        pass
-    
 
+class Deck():
+    def __init__(self,delnum):
+        self.cards = [i for i in range(3,36)]#山札は後ろから惹かれていく
+        self.delcards = []
 
-class TurnController:
-    self.count = -1
-    self.players = 0
-    def __init__(self,players):
-        self.players =players
-    def getNextPlayer():#次の手番の人を返す
-        count +=1
-        return players[count%len(players)]
-
-
-class Deck:
-    self.cards = [i for i in range(3,36)]
-    self.delcards = []
-    def __init__(self):
         for _ in range(3):
-            delcards.append(cards.pop(rd.uniform(0,len(cards))))
-            self.cards = rd.shuffle(cards)
+            self.delcards.append(self.cards.pop(int(random.uniform(0,len(self.cards)))))
+            random.shuffle(self.cards)
 
     def draw(self):#draw one card
-        if len(cards) == 0:#number of cards is zero
-            return "no cards"
-        return cards.pop(-1)
+        if len(self.cards) == 0:#number of cards is zero
+            return "No cards"
+        return self.cards.pop(-1)
+
+    def getInfo(self):
+        deckinfo ={}
+        deckinfo["decknum"] = len(self.cards)
+        return deckinfo
 
 
-class Player:
-    self.name = ""
-    self.coins = 0
-    self.cards = 0 #hands cards
+class TurnController():
+    def __init__(self,players):
+        self.turn = -1#ずれているので注意getTurnを利用すること
+        self.players = players
+    def getNextPlayer(self):#次の手番の人を返す
+        self.turn +=1
+        return self.players[self.turn%len(self.players)]
+    def getNowPlayer(self):
+        return self.players[self.turn%len(self.players)]
+    def getTurnOrder(self):
+        order = self.players[self.turn%len(self.players):]
+        if self.turn%len(self.players) != 0:
+            order.extend(self.players[0:self.turn%len(self.players)])
+        return order
+    def getTurn(self):
+        return self.turn +1
+
+
+class Player():
     def __init__(self,name,coins):
         self.name = name
-        self.cards = coins
+        self.coins = coins
+        self.cards = [] #hands cards
 
-    def calcPoint():
-        if len(cards) ==0:
-            return 0
-        ans = cards[0]
-        for i in range(len(cards)-1):
-            if cards[i+1] - cards[i] != 1:
-                ans += cards[i+1]
-        return ans 
+    def __lt__(self,other):
+        return self.calcPoint()<other.calcPoint()
 
+    def calcPoint(self):
+        if len(self.cards) ==0:
+            return 0-self.coins
+        ans = self.cards[0]
+        for i in range(len(self.cards)-1):
+            if self.cards[i+1] - self.cards[i] != 1:
+                ans += self.cards[i+1]
+        return ans-self.coins 
 
+    def pick(self,fieldcard,fieldcoins):#pick card
+        self.cards.append(fieldcard)
+        self.coins += fieldcoins
+        self.cards.sort()
 
-    def pick(fieldcard,fieldcoin):#pick card
-        cards.add(fieldcard)
-        coins.add(fieldcoin)
-        cards.sort()
+    def passTurn(self):
+        if self.coins == 0:
+            return "No coin"
+        else:
+            self.coins -= 1
+            return "OK"
 
-    def passTurn():
-        coins -= 1
-
+    def getInfo(self):
+        playerinfo = {}
+        playerinfo["coins"]=self.coins
+        playerinfo["cards"]=self.cards
+        playerinfo["point"]=self.calcPoint()
+        return playerinfo
 

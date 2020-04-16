@@ -7,8 +7,8 @@ client = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #オブジェクト�
 
 client.connect((host, port)) #これでサーバーに接続します
 
-massage = "from nadechin"
-
+massage = 
+while True
 client.send(massage.encode('utf-8')) #適当なデータを送信します（届く側にわかるように）
 
 response = client.recv(4096) #レシーブは適当な2の累乗にします（大きすぎるとダメ）
