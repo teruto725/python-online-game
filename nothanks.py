@@ -2,22 +2,31 @@ import random
 
 class Nothanks():
     def __init__(self):
-        self.initcoins = 25 #playerの初期コイン数
-        self.delcardnum =3 #デッキから抜くカード数
-        self.players = []
-        self.fieldcard = 0
-        self.fieldcoins = 0
+        self.initcoins = 25 #
+        self.delcardnum =3 # num which is how 
+        self.playercap = 3#limit of players num
+        self.players = []#player name list
+        self.fieldcard = 0# card on the field
+        self.fieldcoins = 0 #coins puted on field card
+        self.waiting_flg = True # whether player can enter or not
+
     def addPlayer(self,name):#add player
+        if self.waiting_flg == False:
+            return "Game was already started"
         self.players.append(Player(name,self.initcoins))
-        return ("add player"+self.players[-1].name)
+        if len(self.players) == self.playercap:
+            self.waiting_flg = False
+            return "Game start"
+        return "You entered"
+
     def startGame(self):#gamestart
         if len(self.players) < 2:
-            return "players are not enougth"
+            print("Error : Not enough players")
         else:
             self.tcon = TurnController(self.players)
             self.deck = Deck(self.delcardnum)#prepare
             self.fieldcard = self.deck.draw()#initial card
-            return "game start"
+
     def nextTurn(self):#go to next turn
         if self.deck.draw() == "No cards":
             return "Game is end"
@@ -25,7 +34,10 @@ class Nothanks():
             nextplayer = self.tcon.getNextPlayer()#tebansusumeru 
             
             return nextplayer.name   
-    def action(self,action):#player do action
+
+    def action(self,action,name):#player do action
+        if self.tcon.getNowPlayer().name != name:
+            return "Not your turn"
         if action == "pick":  
             player = self.tcon.getNowPlayer()
             player.pick(self.fieldcard,self.fieldcoins)
@@ -41,10 +53,11 @@ class Nothanks():
                 return "Pass is ok"
         else:
             return "Error of action's name"     
-    def getInfo(self):#jsonでゲーム情報全部返す   
+
+    def getInfo(self):#辞書型でゲーム情報返す 
         infodict ={}
         infodict["turnnum"] = self.tcon.getTurn()
-        infodict["turnorder"] = self.tcon.getTurnOrder()
+        infodict["turnorder"] = [player.name for player in self.tcon.getTurnOrder()]
         infodict["rankingorder"] = [player.name for player in sorted(self.players)]
         infodict["playerinfo"] = {}
         for player in self.players:
@@ -82,16 +95,20 @@ class TurnController():
     def __init__(self,players):
         self.turn = -1#ずれているので注意getTurnを利用すること
         self.players = players
+    
     def getNextPlayer(self):#次の手番の人を返す
         self.turn +=1
         return self.players[self.turn%len(self.players)]
+    
     def getNowPlayer(self):
         return self.players[self.turn%len(self.players)]
+    
     def getTurnOrder(self):
         order = self.players[self.turn%len(self.players):]
         if self.turn%len(self.players) != 0:
             order.extend(self.players[0:self.turn%len(self.players)])
         return order
+    
     def getTurn(self):
         return self.turn +1
 

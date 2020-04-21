@@ -1,16 +1,55 @@
 import socket
+import json
+import sys
 
-host = "25.54.242.108" #お使いのサーバーのホスト名を入れます
-port = 1000 #適当なPORTを指定してあげます
 
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #オブジェクトの作成をします
+def recvline(conn):#文字列受け取り
+    """
+    receive data from socket until newline
+    """
+    buf = b''
+    while True:
+        c = conn.recv(1)
+        if c == b"\n":
+            break
+        buf += c
+    return buf.decode()
 
-client.connect((host, port)) #これでサーバーに接続します
+def sendline(conn, s):#文字列送信
+    """
+    send data with newline
+    """
+    print(s)
+    b = (s + "\n").encode()
+    conn.send(b)
 
-massage = 
-while True
-client.send(massage.encode('utf-8')) #適当なデータを送信します（届く側にわかるように）
+def main():
+    server_host = "localhost"
+    server_port = 1000
+    conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    conn.connect((server_host, server_port))
+    print(recvline(conn))#connection is ok
+    while True:
+        
+        message  = json.loads(recvline(conn))
+        print(message)
+        if message["type"] == "request_room_name":
+            print("enter room name")
+            room_name = input()
+            print("enter player name")
+            player_name = input()
+            sendline(conn,json.dumps({
+                "type":"reply_room_name",
+                "payload":{"room_name":room_name,"player_name":player_name}
+                }))
+        elif message["type"] == "request_action":
+            print("action choice: pick or pass")
+            action = input()
+            sendline(conn,json.dumps({
+                "type":"reply_action",
+                "payload":{"action_type":action}
+            }))
+            
 
-response = client.recv(4096) #レシーブは適当な2の累乗にします（大きすぎるとダメ）
-
-print(response)
+if __name__ == '__main__':
+    main()
