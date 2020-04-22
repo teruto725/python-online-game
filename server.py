@@ -19,7 +19,6 @@ class GameController():
         if result == "Game start":
             self.players.append(Player(socket,name))
             self.start_game()
-            
         else:
             return result 
 
@@ -146,10 +145,7 @@ class Player():#plyer classs
             }))
     
 
-
-
 class Socket(asyncio.Protocol):#gconとcmserverにsendとdatareceivedを渡すクラス
-    
     def __init__(self):
         self.message =""
     
@@ -161,7 +157,6 @@ class Socket(asyncio.Protocol):#gconとcmserverにsendとdatareceivedを渡す�
         self.message =""
         Lobby.enter_lobby(self)
         
-    
     def send(self,data):#data is str
         print(data)
         b = (data + "\n").encode()
@@ -184,8 +179,7 @@ class Socket(asyncio.Protocol):#gconとcmserverにsendとdatareceivedを渡す�
                 "payload":{"result_message":result}
                 }))
             
-
-
+ 
     def byte_to_str(self,b):
         if type(b) == "str":
             return b.split("\n")
