@@ -28,11 +28,10 @@ class Nothanks():
             self.fieldcard = self.deck.draw()#initial card
 
     def nextTurn(self):#go to next turn
-        if self.deck.draw() == "No cards":
+        if self.deck.getInfo()["decknum"]==0:
             return "Game is end"
         else:
-            nextplayer = self.tcon.getNextPlayer()#tebansusumeru 
-            
+            nextplayer = self.tcon.getNextPlayer()#tebansusumeru       
             return nextplayer.name   
 
     def action(self,action,name):#player do action
@@ -64,7 +63,7 @@ class Nothanks():
             infodict["playerinfo"][player.name] = player.getInfo()
         infodict["deckinfo"] = self.deck.getInfo()
         infodict["fieldinfo"] = {"fieldcard":self.fieldcard,"fieldcoins":self.fieldcoins}
-        if len(self.deck.cards) == 0:
+        if self.deck.getInfo()["decknum"] == 0:
             infodict["gamestatus"] = "finish"
         else :
             infodict["gamestatus"] = "ongoing"

@@ -44,7 +44,7 @@ def main():
                 }))
         elif message["type"] == "request_action":
             print("action choice: pick or pass")
-            action = input()
+            action = "pick"
             sendline(conn,json.dumps({
                 "type":"reply_action",
                 "payload":{"action_type":action}

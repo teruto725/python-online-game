@@ -2,7 +2,7 @@ import nothanks as nt
 import random 
 import time
 game = nt.Nothanks()
-plist = ["p1","p2"]
+plist = ["p1","p2","p3"]
 for name in plist:
     game.addPlayer(name)
 game.startGame()
@@ -15,7 +15,7 @@ while True:
     print(str(gameinfo["fieldinfo"]))
     print(nextplayer+"のターン:pass or pick")
     action = input()
-    game.action(action)
+    game.action(action,nextplayer)
     gameinfo = game.getInfo()
     
     if gameinfo["gamestatus"] == "finish":
@@ -24,6 +24,9 @@ while True:
         break
     else:
         print("------player情報-----------")
+        print(gameinfo)
+        '''
         for name in plist:
             pinfo = gameinfo["playerinfo"][name]
             print(name+str(pinfo))
+        '''

@@ -3,72 +3,7 @@ import asyncio
 import json
 from nothanks import Nothanks
 import time
-
-
-class GameController():
-    def __init__(self,game):
-        self.players =[]#paticipater
-        self.game = game#gamemodule
-
-    def add_player(self,name,socket):#if you can enter, return Ture or if not,return false
-        result = self.game.addPlayer(name)
-        if result == "You entered":
-            self.players.append(Player(socket,name))
-            return True
-
-        if result == "Game start":
-            self.players.append(Player(socket,name))
-            self.start_game()
-        else:
-            return result 
-
-    def start_game(self):#send start notice and info 
-        print("gamestart")
-        self.game.startGame()
-        info = self.game.getInfo()
-        for p in self.players:
-            p.send_notice_start()
-            p.send_infomation_game(info)
-        self.turn_flow()
-    
-    def turn_flow(self):#controll turn
-        while True:
-            turn_player = self.game.nextTurn()
-            self.player_action(turn_player)
-            gameinfo = self.game.getInfo()
-            if gameinfo["gamestatus"] == "finish":
-                for p in self.players:
-                    p.send_notice_end()
-                    Lobby.game_end(self)
-                    break
-            else:
-                for p in self.players:
-                    p.send_infomation_game()
-            
-            
-    def player_action(self,turn_player_name):#send requestaciton and wait reply after that do action and reply to cliant
-        for p in self.players:
-            if p.name == turn_player_name:
-                p.request_action(self.game.getInfo())
-                message=self.wait_message(p,"reply_action")
-                result = self.game.action(message["payload"]["action_type"],p.name)
-                p.send_reply_action(result)
-
-    def wait_message(self,p,type_str):# wait message change to anticipated type_str
-        timecon = 0
-        while True:
-            timecon += 1
-            if p.message["type"] == type_str:
-                return p.message
-            if timecon > 10**6:
-                print("TLE")
-                break
-            time.sleep(0.001)
-
-    def get_sockets_list(self):# for Lobby.end_game()
-        Lobby.game_end(self)
-        return [p.socket for p in self.players]
-
+import threading
 
 class Lobby():#static class #all socket enter here firstly and can choice entering room
     sockets = []#private #sockets list
@@ -105,12 +40,78 @@ class Lobby():#static class #all socket enter here firstly and can choice enteri
     def game_end(gcon):#ロビーに戻ってくる
         Lobby.sockets.extend(gcon.get_sockets_list())
         Lobby.sockets.pop(gcon)#ゲーム削除
-        
+
+class GameController():
+    def __init__(self,game):
+        self.players =[]#paticipater
+        self.game = game#gamemodule
+        self.thread = None
+
+    def add_player(self,name,socket):#if you can enter, return Ture or if not,return false
+        result = self.game.addPlayer(name)
+        if result == "You entered":
+            self.players.append(Player(socket,name))
+            return True
+        if result == "Game start":
+            self.players.append(Player(socket,name))
+            self.thread = threading.Thread(target=self.start_game)
+
+            self.thread.start()
+        else:
+            return result 
+
+    def start_game(self):#send start notice and info 
+        print("gamestart")
+        self.game.startGame()
+        info = self.game.getInfo()
+        for p in self.players:
+            p.send_notice_start()
+            p.send_infomation_game(info)
+        self.turn_flow()
+
+    def turn_flow(self):#controll turn
+        while True:
+            turn_player = self.game.nextTurn()
+            self.player_action(turn_player)
+            gameinfo = self.game.getInfo()
+            if gameinfo["gamestatus"] == "finish":
+                for p in self.players:
+                    p.send_notice_end()
+                Lobby.game_end(self)
+                break
+            '''
+            else:
+                for p in self.players:
+                    p.send_infomation_game(gameinfo)
+            '''
+            
+    def player_action(self,turn_player_name):#send requestaciton and wait reply after that do action and reply to cliant
+        for p in self.players:
+            if p.name == turn_player_name:
+                p.request_action(self.game.getInfo())
+                message=self.wait_message(p,"reply_action")
+                result = self.game.action(message["payload"]["action_type"],p.name)
+                p.send_reply_action(result)
+
+    def wait_message(self,p,type_str):# wait message change to anticipated type_str
+        timecon = 0
+        while True:
+            timecon += 1
+            message = p.socket.pop_message()
+            if message["type"] == type_str:
+                return message
+            if timecon > 100:
+                print("TLE")
+                break
+            time.sleep(0.1)
+
+    def get_sockets_list(self):# for Lobby.end_game()
+        return [p.socket for p in self.players]
+
 
 class Player():#plyer classs
     def __init__(self,socket,name):
         self.socket = socket
-        self.message = self.socket.message # this is the message from client
         self.name = name
 
     def request_action(self,info):
@@ -162,6 +163,11 @@ class Socket(asyncio.Protocol):#gconとcmserverにsendとdatareceivedを渡す�
         b = (data + "\n").encode()
         self.transport.write(b)
     
+    def pop_message(self):
+        m  = self.message
+        self.message={"type":"no_message","payload":None} 
+        return m
+
     def data_received(self,data):
         print("data received")
         s = self.byte_to_str(data)
@@ -173,7 +179,7 @@ class Socket(asyncio.Protocol):#gconとcmserverにsendとdatareceivedを渡す�
             
         if self.message["type"] == "reply_room_name":
             result = Lobby.enter_room(self.message["payload"]["room_name"],self.message["payload"]["player_name"],self)    
-            self.message =  {"type":"no_message","payload":"None"}
+            self.message =  {"type":"no_message","payload":None}
             self.send(json.dumps({
                 "type":"result_room_name",
                 "payload":{"result_message":result}
