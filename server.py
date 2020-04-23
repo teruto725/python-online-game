@@ -9,43 +9,90 @@ class Lobby():#static class #all socket enter here firstly and can choice enteri
     sockets = []#private #sockets list
     rooms ={}#private # one room has one gamecontroller {"name":gcon}
     @staticmethod
-    def add_game_nothanks(name):#add game room nothanks
-        Lobby.rooms[name] = GameController(Nothanks())
+    def add_game_nothanks_normal(name):#add game room nothanks
+        gcon = GameController(Nothanks(),"normal")
+        gcon.start()
+        Lobby.rooms[name] = gcon
     
     @staticmethod
+    def add_game_nothanks_learning(name,epoc_num):
+        gcon = GameController(Nothanks(),"learning",epoc_num)
+        gcon.start()
+        Lobby.rooms[name] = gcon
+
+    @staticmethod
     def get_rooms():#get room list
-        s = ""
+        li = []
         for k in Lobby.rooms.keys():
-            s += (k+":")
-        return s
+            li.append(k)
+        return li
 
     @staticmethod
     def enter_lobby(socket):#generated socket use this methods difinitely
         Lobby.sockets.append(socket)
         socket.send(json.dumps({
-            "type":"request_room_name",
-            "payload":{"roomlist":Lobby.get_rooms()
-            }}))
+            "type":"request_room_name_and_role",
+            "payload":{"roomlist":Lobby.get_rooms()}
+            }))
 
     @staticmethod
-    def enter_room(roomname,playername,socket):#go to game room
-        result = Lobby.rooms[roomname].add_player(playername,socket)
-        if result==False:
-            return "Room is full"
+    def enter_room_as_viewer(roomname,socket):
+        if roomname not in Lobby.rooms.keys():
+            socket.send(json.dumps({
+                    "type":"_room_name_and_role",
+                    "payload":{"result_message":"Room of the name is not exist"}
+            }))
         else:
-            Lobby.sockets.remove(socket)
-            return "You entered " +roomname 
+            result = Lobby.rooms[roomname].add_viewer(Viewer(socket))
+            socket.send(json.dumps({
+                        "type":"_room_name_and_role",
+                        "payload":{"result_message":result}
+                        }))
+
+    @staticmethod
+    def enter_room_as_player(roomname,playername,socket):#go to game room
+        if roomname not in Lobby.rooms.keys():
+            socket.send(json.dumps({
+                    "type":"_room_name_and_role",
+                    "payload":{"result_message":"Room of the name is not exist"}
+            }))
+        else:
+            result = Lobby.rooms[roomname].add_player(playername,socket)
+            if result==False:
+                socket.send(json.dumps({
+                        "type":"result_room_name_and_role",
+                        "payload":{"result_message":"Lobby is full"}
+                        }))
+            else:
+                Lobby.sockets.remove(socket)
+                socket.send(json.dumps({
+                    "type":"result_room_name_and_role",
+                    "payload":{"result_message":"You enterd "+roomname}
+                }))
 
     @staticmethod
     def game_end(gcon):#ロビーに戻ってくる
-        Lobby.sockets.extend(gcon.get_sockets_list())
-        Lobby.sockets.pop(gcon)#ゲーム削除
+        for s in gcon.get_sockets_list():
+            Lobby.enter_lobby(s)
+        
+        for k,v in Lobby.rooms.items():#遊んでた部屋の削除
+            if v == gcon:
+                Lobby.rooms.pop(k)
+                if gcon.mode == "normal":
+                    Lobby.add_game_nothanks_normal(k)
+                if gcon.mode == "learning":
+                    Lobby.add_game_nothanks_learning(k,gcon.epoc_num)
 
-class GameController():
-    def __init__(self,game):
+
+class GameController(threading.Thread):
+    def __init__(self,game,mode,epoc_num=None):
         self.players =[]#paticipater
+        self.viewers =[]
         self.game = game#gamemodule
-        self.thread = None
+        self.mode = mode
+        self.epoc_num = epoc_num
+        super(GameController, self).__init__()
+    
 
     def add_player(self,name,socket):#if you can enter, return Ture or if not,return false
         result = self.game.addPlayer(name)
@@ -54,36 +101,46 @@ class GameController():
             return True
         if result == "Game start":
             self.players.append(Player(socket,name))
-            self.thread = threading.Thread(target=self.start_game)
-
-            self.thread.start()
-        else:
+        else:#game was already started
             return result 
+
+    def add_viewer(self,viewer):
+        self.viewers.append(viewer)
+        return "Add ok"
+    #override
+    def run(self):# wait since players come after that start game
+        while True:
+            if len(self.players) == self.game.playercap:
+                if self.mode == "learning":
+                    for epoc in range(1,self.epoc_num+1):
+                        for p in self.players:
+                            p.send_notice_epoc(epoc)
+                        self.start_game()
+                    break
+                if self.mode == "normal":
+                    self.start_game()
+                    break
+        Lobby.game_end(self)
 
     def start_game(self):#send start notice and info 
         print("gamestart")
         self.game.startGame()
-        info = self.game.getInfo()
         for p in self.players:
-            p.send_notice_start()
-            p.send_infomation_game(info)
+            p.send_notice_start(self.game.getInfo())
         self.turn_flow()
 
     def turn_flow(self):#controll turn
         while True:
+            for v in self.viewers:
+                v.send_infomation_game(self.game.getInfo())
             turn_player = self.game.nextTurn()
             self.player_action(turn_player)
             gameinfo = self.game.getInfo()
             if gameinfo["gamestatus"] == "finish":
                 for p in self.players:
-                    p.send_notice_end()
-                Lobby.game_end(self)
+                    p.send_notice_end(self.game.getInfo())
                 break
-            '''
-            else:
-                for p in self.players:
-                    p.send_infomation_game(gameinfo)
-            '''
+            
             
     def player_action(self,turn_player_name):#send requestaciton and wait reply after that do action and reply to cliant
         for p in self.players:
@@ -91,7 +148,7 @@ class GameController():
                 p.request_action(self.game.getInfo())
                 message=self.wait_message(p,"reply_action")
                 result = self.game.action(message["payload"]["action_type"],p.name)
-                p.send_reply_action(result)
+                p.send_reply_action(result,self.game.getInfo())
 
     def wait_message(self,p,type_str):# wait message change to anticipated type_str
         timecon = 0
@@ -100,15 +157,15 @@ class GameController():
             message = p.socket.pop_message()
             if message["type"] == type_str:
                 return message
-            if timecon > 100:
+            if timecon > 10**4:
                 print("TLE")
                 break
-            time.sleep(0.1)
+            time.sleep(0.001)
 
     def get_sockets_list(self):# for Lobby.end_game()
-        return [p.socket for p in self.players]
-
-
+        slist =  [p.socket for p in self.players]
+        slist.extend([v.socket for v in self.viewers])
+        return slist
 class Player():#plyer classs
     def __init__(self,socket,name):
         self.socket = socket
@@ -118,33 +175,48 @@ class Player():#plyer classs
         self.message = {"type":"no_message","payload":None}
         self.socket.send(json.dumps({
             "type":"request_action",
-            "payload":info
+            "payload":{"game_status":info}
             }))
     
-    def send_reply_action(self,result):
+    def send_reply_action(self,result,info):
         self.socket.send(json.dumps({
             "type":"result_action",
-            "payload":{"result":result}
+            "payload":{"result":result,"game_status":info}
         }))
 
-    def send_notice_start(self):
+    def send_notice_start(self,info):
         self.socket.send(json.dumps({
             "type":"notice_start",
-            "payload":{}
+            "payload":{"game_status":info}
             }))
 
     def send_infomation_game(self,info):
         self.socket.send(json.dumps({
             "type":"infomation_game",
-            "payload":info
+            "payload":{"game_status":info}
             }))
     
-    def send_notice_end(self):
+    def send_notice_end(self,info):
         self.socket.send(json.dumps({
-            "type":"notice_start",
-            "payload":{}
+            "type":"notice_end",
+            "payload":{"game_status":info}
             }))
-    
+
+    def send_notice_epoc(self,epoc):
+        self.socket.send(json.dumps({
+            "type":"notice_epoc",
+            "payload":{"epoc_num":epoc}
+            }))
+
+class Viewer():
+    def __init__(self,socket):
+        self.socket = socket
+    def send_infomation_game(self,info):
+        self.socket.send(json.dumps({
+            "type":"infomation_game",
+            "payload":{"game_status":info}
+            }))
+
 
 class Socket(asyncio.Protocol):#gconとcmserverにsendとdatareceivedを渡すクラス
     def __init__(self):
@@ -176,15 +248,13 @@ class Socket(asyncio.Protocol):#gconとcmserverにsendとdatareceivedを渡す�
                 continue
             r = json.loads(r.strip())
             self.message = r
-            
-        if self.message["type"] == "reply_room_name":
-            result = Lobby.enter_room(self.message["payload"]["room_name"],self.message["payload"]["player_name"],self)    
-            self.message =  {"type":"no_message","payload":None}
-            self.send(json.dumps({
-                "type":"result_room_name",
-                "payload":{"result_message":result}
-                }))
-            
+        print(self.message)
+        if self.message["type"] == "reply_room_name_and_role":
+            if self.message["payload"]["role"] == "viewer":
+                Lobby.enter_room_as_viewer(self.message["payload"]["room_name"],self)
+            if self.message["payload"]["role"] == "player":
+                Lobby.enter_room_as_player(self.message["payload"]["room_name"],self.message["payload"]["player_name"],self)
+            self.message = {"type":"no_message","payload":None}
  
     def byte_to_str(self,b):
         if type(b) == "str":
@@ -196,7 +266,12 @@ class Socket(asyncio.Protocol):#gconとcmserverにsendとdatareceivedを渡す�
 def main():
     host = "localhost" #お使いのサーバーのホスト名を入れます
     port = 1000 #クライアントで設定したPORTと同じもの指定してあげます
-    Lobby.add_game_nothanks("room1")
+    
+    Lobby.add_game_nothanks_normal("normal")#一回ゲームするだけのルーム
+    Lobby.add_game_nothanks_learning("learning",100)#指定回数ゲームする学習用のルーム
+    '''
+    好きなroom追加してね
+    '''
     ev_loop = asyncio.get_event_loop()
     factory = ev_loop.create_server(Socket, host, port)
     server = ev_loop.run_until_complete(factory)

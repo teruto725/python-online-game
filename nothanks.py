@@ -9,7 +9,8 @@ class Nothanks():
         self.fieldcard = 0# card on the field
         self.fieldcoins = 0 #coins puted on field card
         self.waiting_flg = True # whether player can enter or not
-
+        self.end_flg = False
+    
     def addPlayer(self,name):#add player
         if self.waiting_flg == False:
             return "Game was already started"
@@ -19,20 +20,20 @@ class Nothanks():
             return "Game start"
         return "You entered"
 
-    def startGame(self):#gamestart
+    def startGame(self):#gamestart ( init all parameters)
         if len(self.players) < 2:
             print("Error : Not enough players")
         else:
+            self.end_flg = False
+            for i in range(len(self.players)):
+                self.players[i] = Player(self.players[i].name,self.initcoins)
             self.tcon = TurnController(self.players)
             self.deck = Deck(self.delcardnum)#prepare
             self.fieldcard = self.deck.draw()#initial card
 
     def nextTurn(self):#go to next turn
-        if self.deck.getInfo()["decknum"]==0:
-            return "Game is end"
-        else:
-            nextplayer = self.tcon.getNextPlayer()#tebansusumeru       
-            return nextplayer.name   
+        nextplayer = self.tcon.getNextPlayer()#tebansusumeru       
+        return nextplayer.name   
 
     def action(self,action,name):#player do action
         if self.tcon.getNowPlayer().name != name:
@@ -41,6 +42,8 @@ class Nothanks():
             player = self.tcon.getNowPlayer()
             player.pick(self.fieldcard,self.fieldcoins)
             self.fieldcoins = 0
+            result = self
+            if 
             self.fieldcard = self.deck.draw()
             return "Pick is ok"
         elif action == "pass":
@@ -81,7 +84,7 @@ class Deck():
 
     def draw(self):#draw one card
         if len(self.cards) == 0:#number of cards is zero
-            return "No cards"
+            return "01"
         return self.cards.pop(-1)
 
     def getInfo(self):
