@@ -30,7 +30,6 @@ def main():
     conn.connect((server_host, server_port))
     print(recvline(conn))#connection is ok
     while True:
-        
         message  = json.loads(recvline(conn))
         print(message)
         if message["type"] == "request_room_name_and_role":

@@ -61,13 +61,13 @@ class Lobby():#static class #all socket enter here firstly and can choice enteri
             if result==False:
                 socket.send(json.dumps({
                         "type":"result_room_name_and_role",
-                        "payload":{"result_message":"Lobby is full"}
+                        "payload":{"result":"declined","reason":"Room is already full"}
                         }))
             else:
                 Lobby.sockets.remove(socket)
                 socket.send(json.dumps({
                     "type":"result_room_name_and_role",
-                    "payload":{"result_message":"You enterd "+roomname}
+                    "payload":{"result":"accepted"}
                 }))
 
     @staticmethod
@@ -127,6 +127,8 @@ class GameController(threading.Thread):
         self.game.startGame()
         for p in self.players:
             p.send_notice_start(self.game.getInfo())
+        for v in self.viewers:
+            v.send_notice_start(self.game.getInfo())
         self.turn_flow()
 
     def turn_flow(self):#controll turn
@@ -136,19 +138,25 @@ class GameController(threading.Thread):
             turn_player = self.game.nextTurn()
             self.player_action(turn_player)
             gameinfo = self.game.getInfo()
-            if gameinfo["gamestatus"] == "finish":
+            if gameinfo["end_flg"] == "True":
                 for p in self.players:
-                    p.send_notice_end(self.game.getInfo())
+                    p.send_notice_end(gameinfo) 
+                for v in self.viewers:
+                    v.send_notice_end(gameinfo)
                 break
-            
-            
+
     def player_action(self,turn_player_name):#send requestaciton and wait reply after that do action and reply to cliant
         for p in self.players:
             if p.name == turn_player_name:
-                p.request_action(self.game.getInfo())
+                p.send_request_action(self.game.getActionTypes(turn_player_name),self.game.getInfo())
                 message=self.wait_message(p,"reply_action")
-                result = self.game.action(message["payload"]["action_type"],p.name)
-                p.send_reply_action(result,self.game.getInfo())
+                action_result = self.game.action(message["payload"]["action_type"],p.name)
+                result = "accepted"
+                reason = ""
+                if action_result != "Ok":
+                    result = "declined"
+                    reason = action_result
+                p.send_result_action(result,reason,self.game.getInfo())
 
     def wait_message(self,p,type_str):# wait message change to anticipated type_str
         timecon = 0
@@ -171,17 +179,17 @@ class Player():#plyer classs
         self.socket = socket
         self.name = name
 
-    def request_action(self,info):
+    def send_request_action(self,action_types,info):
         self.message = {"type":"no_message","payload":None}
         self.socket.send(json.dumps({
             "type":"request_action",
-            "payload":{"game_status":info}
+            "payload":{"action_types":action_types,"game_status":info}
             }))
     
-    def send_reply_action(self,result,info):
+    def send_result_action(self,result,reason,info):
         self.socket.send(json.dumps({
             "type":"result_action",
-            "payload":{"result":result,"game_status":info}
+            "payload":{"result":result,"reason":reason,"game_status":info}
         }))
 
     def send_notice_start(self,info):
@@ -211,12 +219,22 @@ class Player():#plyer classs
 class Viewer():
     def __init__(self,socket):
         self.socket = socket
-    def send_infomation_game(self,info):
+    
+    def send_notice_start(self,info):
         self.socket.send(json.dumps({
-            "type":"infomation_game",
+            "type":"notice_start",
             "payload":{"game_status":info}
             }))
-
+    def send_infomation_game(self,info):
+        self.socket.send(json.dumps({
+            "type":"information_game",
+            "payload":{"game_status":info}
+            }))
+    def send_notice_end(self,info):
+        self.socket.send(json.dumps({
+            "type":"notice_end",
+            "payload":{"game_status":info}
+            }))
 
 class Socket(asyncio.Protocol):#gconとcmserverにsendとdatareceivedを渡すクラス
     def __init__(self):
@@ -226,7 +244,10 @@ class Socket(asyncio.Protocol):#gconとcmserverにsendとdatareceivedを渡す�
         self.transport = transport
         self.addr, self.port = self.transport.get_extra_info('peername')
         self.id = "{}:{}".format(self.addr, self.port)
-        self.send("Connection is OK")
+        self.send(json.dumps({
+            "type":"notice_connection_ok",
+            "payload":{}
+            }))
         self.message =""
         Lobby.enter_lobby(self)
         
@@ -268,7 +289,7 @@ def main():
     port = 1000 #クライアントで設定したPORTと同じもの指定してあげます
     
     Lobby.add_game_nothanks_normal("normal")#一回ゲームするだけのルーム
-    Lobby.add_game_nothanks_learning("learning",100)#指定回数ゲームする学習用のルーム
+    Lobby.add_game_nothanks_learning("learning",10)#指定回数ゲームする学習用のルーム
     '''
     好きなroom追加してね
     '''

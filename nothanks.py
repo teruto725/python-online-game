@@ -10,7 +10,6 @@ class Nothanks():
         self.fieldcoins = 0 #coins puted on field card
         self.waiting_flg = True # whether player can enter or not
         self.end_flg = False
-    
     def addPlayer(self,name):#add player
         if self.waiting_flg == False:
             return "Game was already started"
@@ -35,6 +34,14 @@ class Nothanks():
         nextplayer = self.tcon.getNextPlayer()#tebansusumeru       
         return nextplayer.name   
 
+    def getActionTypes(self,player):
+        for p in self.players:
+            if p.name == player:
+                if p.coins == 0:
+                    return ["pick"]
+                else:
+                    return ["pick","pass"]
+    
     def action(self,action,name):#player do action
         if self.tcon.getNowPlayer().name != name:
             return "Not your turn"
@@ -42,19 +49,22 @@ class Nothanks():
             player = self.tcon.getNowPlayer()
             player.pick(self.fieldcard,self.fieldcoins)
             self.fieldcoins = 0
-            result = self
-            if 
-            self.fieldcard = self.deck.draw()
-            return "Pick is ok"
+            result = self.deck.draw()
+            if str(result) == "No cards":
+                self.end_flg = True
+                self.fieldcard = None
+            else :
+                self.fieldcard = result
+            return "Ok"
         elif action == "pass":
             player = self.tcon.getNowPlayer()
             self.fieldcoins += 1
             if (player.passTurn()== "No coin"):
-                return "No coin"
+                return "You can't pass because of no coin"
             else:
-                return "Pass is ok"
+                return "Ok"
         else:
-            return "Error of action's name"     
+            return "Action_type is wrong"     
 
     def getInfo(self):#辞書型でゲーム情報返す 
         infodict ={}
@@ -66,10 +76,7 @@ class Nothanks():
             infodict["playerinfo"][player.name] = player.getInfo()
         infodict["deckinfo"] = self.deck.getInfo()
         infodict["fieldinfo"] = {"fieldcard":self.fieldcard,"fieldcoins":self.fieldcoins}
-        if self.deck.getInfo()["decknum"] == 0:
-            infodict["gamestatus"] = "finish"
-        else :
-            infodict["gamestatus"] = "ongoing"
+        infodict["end_flg"] = str(self.end_flg)
         return infodict
 
 
@@ -84,7 +91,7 @@ class Deck():
 
     def draw(self):#draw one card
         if len(self.cards) == 0:#number of cards is zero
-            return "01"
+            return "No cards"
         return self.cards.pop(-1)
 
     def getInfo(self):
@@ -137,6 +144,7 @@ class Player():
         self.cards.append(fieldcard)
         self.coins += fieldcoins
         self.cards.sort()
+
 
     def passTurn(self):
         if self.coins == 0:
