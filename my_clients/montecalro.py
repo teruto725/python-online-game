@@ -21,7 +21,7 @@ wheres = [0,1,2,3]#0は山札中,#1は場にある状態,#2は自分が持って
 
 gamma = 0.9
 alpha = 0.03
-upsilon = 10
+upsilon = 30
 actions = ["pick","pass"]
 
 
@@ -161,13 +161,14 @@ def main():
 
     qtable = Qtable()
     player_name = None
-    last_point = initcoins
 
     results = list()
     gosa_results = list()
     vict_sum = 0
-    gosa_sum = list()
-    count = 0
+    episode_num = 0
+    
+    memory = [] #montekaruroを持っておく
+
     print("episode0")
     while True:
         message  = json.loads(recvline(conn))
@@ -181,25 +182,35 @@ def main():
                 "type":"reply_room_name_and_role",
                 "payload":{"room_name":room_name,"player_name":player_name,"role":"player"}
                 }))
+
+
         elif message["type"] == "request_action":
             #print("action choice: pick or pass")
             state = create_state(message["payload"]["game_status"], player_name)
             
             #point = message["payload"]["game_status"]["playerinfo"][player_name]["point"]
+            act = None
+            q = None
+            if len(action_types) == 1:#行動が一つしか
+                q = None
+                for qsell in self.qsells:
+                    if qsell.equals(Qsell(state,0)):
+                        q = qsell
+                act = 0
+                memory.append(q)
+            elif random.randint(0,100) > upsilon:#εグリーディ
+                act = random.randint(0,1)
+                for qsell in self.qsells:
+                    if qsell.equals(Qsell(state,act)):
+                        q = qsell
+            else:#q値をもとに行動選択
+                q = qtable.get_max_q_sell(state)
+                act = q.act
+
+
+            memory.append(q)# ルートを記憶
             
-            mypoint = 0
-            enepoint = 0
-            for key in message["payload"]["game_status"]["playerinfo"].keys():
-                if key == player_name:
-                    mypoint = message["payload"]["game_status"]["playerinfo"][key]["point"]
-                else:
-                    enepoint = message["payload"]["game_status"]["playerinfo"][key]["point"]
-            point =  enepoint - mypoint
-            r = point-last_point
-            last_point = point
-            act, td_gosa = qtable.learn( state, r, message["payload"]["action_types"])
-            if td_gosa is not None:
-                gosa_sum.append( abs(td_gosa))
+
             sendline(conn,json.dumps({
                 "type":"reply_action",
                 "payload":{"action_type":actions[act]}
@@ -208,18 +219,42 @@ def main():
         elif message["type"] == "notice_end":
             is_victry = (message["payload"]["game_status"]["rankingorder"][0] == player_name)
             #print(is_victry)
-            count +=1
+            #reaward
+            reward = None
             if is_victry:
                 vict_sum += 1
-            if count % 50 == 0:
+                reward = 10
+            else:
+                reward = -10
+            
+            gosa_sum = list()
+            # q値の更新
+            for i,q in memory:
+                G = 0
+                j = 0
+                G = gamma ** (len(memory)-i)*reward
+                td_gosa += abs(G - q.qvalue)
+                q.qvalue += alpha *(td_gosa)
+
+            # リセット
+            memory = list()
+
+            ### log系のしょり    
+            episode_num +=1
+
+            if episode_num % 50 == 0:
                 results.append(vict_sum/50)
                 vict_sum = 0
                 gosa_results.append(sum(gosa_sum)/len(gosa_sum))
-                #print(gosa_sum)
                 gosa_sum = None
                 gosa_sum = list()
-            print("episode"+str(count))
-            if count ==1000:
+            
+
+            print("episode"+str(episode_num))
+            if episode_num == 1500:
+                upsilon = 5
+                
+            if episode_num ==3000:
                 #plot_graph(results)
                 #plot_graph(gosa_results)
                 print(gosa_results)

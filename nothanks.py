@@ -84,11 +84,11 @@ class Deck():
     def __init__(self,delnum):
         self.cards = [i for i in range(1,5)]#山札は後ろから惹かれていく
         self.delcards = []
-
-        for _ in range(3):
+        
+        for _ in range(delnum):
             self.delcards.append(self.cards.pop(int(random.uniform(0,len(self.cards)))))
-            random.shuffle(self.cards)
-
+        #random.shuffle(self.cards)
+        
     def draw(self):#draw one card
         if len(self.cards) == 0:#number of cards is zero
             return "No cards"
