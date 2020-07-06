@@ -3,6 +3,12 @@ import json
 import sys
 
 
+
+def learning(info):
+    
+    
+
+
 def recvline(conn):#文字列受け取り
     """
     receive data from socket until newline

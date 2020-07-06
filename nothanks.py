@@ -2,9 +2,9 @@ import random
 
 class Nothanks():
     def __init__(self):
-        self.initcoins = 25 #
-        self.delcardnum =9 # num which is how 
-        self.playercap = 3#limit of players num
+        self.initcoins = 3 #
+        self.delcardnum =0 # num which is how 
+        self.playercap = 2#limit of players num
         self.players = []#player name list
         self.fieldcard = 0# card on the field
         self.fieldcoins = 0 #coins puted on field card
@@ -82,7 +82,7 @@ class Nothanks():
 
 class Deck():
     def __init__(self,delnum):
-        self.cards = [i for i in range(3,36)]#山札は後ろから惹かれていく
+        self.cards = [i for i in range(1,5)]#山札は後ろから惹かれていく
         self.delcards = []
 
         for _ in range(3):

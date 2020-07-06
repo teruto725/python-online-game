@@ -23,7 +23,7 @@ def sendline(conn, s):#文字列送信
     """
     send data with newline
     """
-    print(s)
+    #print(s)
     b = (s + "\n").encode()
     conn.send(b)
 
@@ -35,7 +35,7 @@ def main():
     print(recvline(conn))#connection is ok
     while True:
         message  = json.loads(recvline(conn))
-        print(message)
+        #print(message)
         if message["type"] == "request_room_name_and_role":
             print("enter room name")
             room_name = input()
@@ -46,11 +46,13 @@ def main():
                 "payload":{"room_name":room_name,"player_name":player_name,"role":"player"}
                 }))
         elif message["type"] == "request_action":
-            print("action choice: pick or pass")
-            action_types = message["action_types"]
+            #print("action choice: pick or pass")
+            action_types = message["payload"]["action_types"]
             action = ""
             if len(action_types) == 1:
                 action = action_types[0]
+            else:
+                action = action_types[1]
             action = action_types[int(random.randint(0,len(action_types)-1))]
             sendline(conn,json.dumps({
                 "type":"reply_action",

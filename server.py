@@ -252,7 +252,7 @@ class Socket(asyncio.Protocol):#gconとcmserverにsendとdatareceivedを渡す�
         Lobby.enter_lobby(self)
         
     def send(self,data):#data is str
-        print(data)
+        #print(data)
         b = (data + "\n").encode()
         self.transport.write(b)
     
@@ -262,14 +262,14 @@ class Socket(asyncio.Protocol):#gconとcmserverにsendとdatareceivedを渡す�
         return m
 
     def data_received(self,data):
-        print("data received")
+        #print("data received")
         s = self.byte_to_str(data)
         for r in s:
             if len(r) == 0:
                 continue
             r = json.loads(r.strip())
             self.message = r
-        print(self.message)
+        #print(self.message)
         if self.message["type"] == "reply_room_name_and_role":
             if self.message["payload"]["role"] == "viewer":
                 Lobby.enter_room_as_viewer(self.message["payload"]["room_name"],self)
@@ -289,7 +289,7 @@ def main():
     port = 1000 #クライアントで設定したPORTと同じもの指定してあげます
     
     Lobby.add_game_nothanks_normal("normal")#一回ゲームするだけのルーム
-    Lobby.add_game_nothanks_learning("learning",10)#指定回数ゲームする学習用のルーム
+    Lobby.add_game_nothanks_learning("learning",10000)#指定回数ゲームする学習用のルーム
     '''
     好きなroom追加してね
     '''
