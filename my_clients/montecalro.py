@@ -15,6 +15,7 @@ import csv
 
 
 ########パラメータ#########
+
 initcoins = 3
 cards = [1,2,3,4,5]
 wheres = [0,1,2,3]#0は山札中,#1は場にある状態,#2は自分が持ってる、#3は相手が持ってる
@@ -23,7 +24,6 @@ gamma = 0.9
 alpha = 0.03
 upsilon = 30
 actions = ["pick","pass"]
-
 
 class Qtable():
     def __init__(self):
@@ -92,7 +92,8 @@ class State():
             return True
         else:
             return False
-    
+    def to_dict(self,state):
+        
 
 class Qsell():
     def __init__(self,state,act):
@@ -127,10 +128,14 @@ def sendline(conn, s):#文字列送信
     b = (s + "\n").encode()
     conn.send(b)
 
+def to_dict():
+
+
+
 def create_state(statsdict,player_name):
     coin = statsdict["fieldinfo"]["fieldcoins"]
     cardli = list(np.zeros((5)))
-    cardli[statsdict["fieldinfo"]["fieldcard"]] = 1#場に出ている
+    cardli[statsdict["fieldinfo"]["fieldcard"]-1] = 1#場に出ている
     mycards = statsdict["playerinfo"][player_name]["cards"]
     for card in mycards:
         cardli[card-1] = 2
@@ -158,7 +163,7 @@ def main():
     conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     conn.connect((server_host, server_port))
     #print(recvline(conn))#connection is ok
-
+    upsilon = 30
     qtable = Qtable()
     player_name = None
 
@@ -166,7 +171,7 @@ def main():
     gosa_results = list()
     vict_sum = 0
     episode_num = 0
-    
+    player_name = "monte"
     memory = [] #montekaruroを持っておく
 
     print("episode0")
@@ -176,8 +181,6 @@ def main():
         if message["type"] == "request_room_name_and_role":
             print("enter room name")
             room_name = input()
-            print("enter player name")
-            player_name = input()
             sendline(conn,json.dumps({
                 "type":"reply_room_name_and_role",
                 "payload":{"room_name":room_name,"player_name":player_name,"role":"player"}
@@ -189,18 +192,18 @@ def main():
             state = create_state(message["payload"]["game_status"], player_name)
             
             #point = message["payload"]["game_status"]["playerinfo"][player_name]["point"]
+            action_types = message["payload"]["action_types"]
             act = None
             q = None
             if len(action_types) == 1:#行動が一つしか
-                q = None
-                for qsell in self.qsells:
+                for qsell in qtable.qsells:
                     if qsell.equals(Qsell(state,0)):
                         q = qsell
                 act = 0
                 memory.append(q)
-            elif random.randint(0,100) > upsilon:#εグリーディ
+            elif random.randint(0,100) <= upsilon:#εグリーディ
                 act = random.randint(0,1)
-                for qsell in self.qsells:
+                for qsell in qtable.qsells:
                     if qsell.equals(Qsell(state,act)):
                         q = qsell
             else:#q値をもとに行動選択
@@ -229,13 +232,15 @@ def main():
             
             gosa_sum = list()
             # q値の更新
-            for i,q in memory:
+            i = 0
+            for q in memory:
                 G = 0
                 j = 0
                 G = gamma ** (len(memory)-i)*reward
-                td_gosa += abs(G - q.qvalue)
+                td_gosa = (G - q.qvalue)
+                gosa_sum.append(abs(td_gosa))
                 q.qvalue += alpha *(td_gosa)
-
+                i += 1
             # リセット
             memory = list()
 
@@ -251,14 +256,15 @@ def main():
             
 
             print("episode"+str(episode_num))
-            if episode_num == 1500:
-                upsilon = 5
                 
-            if episode_num ==3000:
+            if episode_num ==5000:
                 #plot_graph(results)
                 #plot_graph(gosa_results)
                 print(gosa_results)
-                with open('results.csv', 'w') as f:
+
+                
+
+                with open('monte_results.csv', 'w') as f:
                     writer = csv.writer(f, lineterminator='\n')
                     writer.writerow(results)
                     writer.writerow(gosa_results)

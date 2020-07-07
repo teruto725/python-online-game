@@ -292,7 +292,7 @@ def main():
     port = 1000 #クライアントで設定したPORTと同じもの指定してあげます
     
     Lobby.add_game_nothanks_normal("normal")#一回ゲームするだけのルーム
-    Lobby.add_game_nothanks_learning("q",3000)#指定回数ゲームする学習用のルーム
+    Lobby.add_game_nothanks_learning("q",5000)#指定回数ゲームする学習用のルーム
     '''
     好きなroom追加してね
     '''
