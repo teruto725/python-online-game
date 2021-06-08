@@ -2,7 +2,7 @@ import random
 
 class Nothanks():
     def __init__(self):
-        self.initcoins = 3 #
+        self.initcoins = 10 #
         self.delcardnum =0 # num which is how 
         self.playercap = 2#limit of players num
         self.players = []#player name list

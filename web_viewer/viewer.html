@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>WebSocket通信</title>
+        <script type="text/javascript">
+
+            var wSck= new WebSocket("echo.websocket.org");// WebSocketオブジェクト生成
+
+            wSck.onopen = function() {//ソケット接続時のアクション
+                document.getElementById('show').innerHTML += "接続しました。" + "<br/>";
+            };
+
+            wSck.onmessage = function(e) {//メッセージを受け取ったときのアクション
+                document.getElementById('show').innerHTML += e.data + "<br/>";
+            };
+
+            var sendMsg = function(val) {//メッセージを送信するときのアクション
+                var line = document.getElementById('msg');//入力内容を取得
+                wSck.send(line.value);//ソケットに送信
+                line.value = "";//内容をクリア
+            };
+        </script>
+    </head>
+
+    <body>
+        <div
+            style="width: 500px; height: 200px; overflow-y: auto; border: 1px solid #333;"
+            id="show"></div>
+        <input type="text" size="80" id="msg" name="msg" />
+        <input type="button" value="送信" onclick="sendMsg();" />
+    </body>
+</html>

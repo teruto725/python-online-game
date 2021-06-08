@@ -29,7 +29,7 @@ def sendline(conn, s):#文字列送信
 
 def main():
     server_host = "localhost"
-    server_port = 1000
+    server_port = 2001
     conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     conn.connect((server_host, server_port))
     print(recvline(conn))#connection is ok

@@ -1,0 +1,25 @@
+{'type': 'information_game', 'payload': {'game_status': {'turnnum': 0, 'turnorder': ['p2', 'p1'], 'rankingorder': ['p1', 'p2'], 'playerinfo': {'p1': {'coins': 10, 'cards': [], 'point': -10}, 'p2': {'coins': 10, 'cards': [], 'point': -10}}, 'deckinfo': {'decknum': 4}, 'fieldinfo': {'fieldcard': 2, 'fieldcoins': 0}, 'end_flg': 'False'}}}
+{'type': 'notice_player_action', 'payload': {'pname': 'p1', 'action': 'pass'}}
+{'type': 'information_game', 'payload': {'game_status': {'turnnum': 1, 'turnorder': ['p1', 'p2'], 'rankingorder': ['p2', 'p1'], 'playerinfo': {'p1': {'coins': 9, 'cards': [], 'point': -9}, 'p2': {'coins': 10, 'cards': [], 'point': -10}}, 'deckinfo': {'decknum': 4}, 'fieldinfo': {'fieldcard': 2, 'fieldcoins': 1}, 'end_flg': 'False'}}}
+{'type': 'notice_player_action', 'payload': {'pname': 'p2', 'action': 'pass'}}
+{'type': 'information_game', 'payload': {'game_status': {'turnnum': 2, 'turnorder': ['p2', 'p1'], 'rankingorder': ['p1', 'p2'], 'playerinfo': {'p1': {'coins': 9, 'cards': [], 'point': -9}, 'p2': {'coins': 9, 'cards': [], 'point': -9}}, 'deckinfo': {'decknum': 4}, 'fieldinfo': {'fieldcard': 2, 'fieldcoins': 2}, 'end_flg': 'False'}}}
+{'type': 'notice_player_action', 'payload': {'pname': 'p1', 'action': 'pick'}}
+{'type': 'notice_draw_card', 'payload': {'next_card': 3}}
+{'type': 'information_game', 'payload': {'game_status': {'turnnum': 3, 'turnorder': ['p1', 'p2'], 'rankingorder': ['p1', 'p2'], 'playerinfo': {'p1': {'coins': 11, 'cards': [2], 'point': -9}, 'p2': {'coins': 9, 'cards': [], 'point': -9}}, 'deckinfo': {'decknum': 3}, 'fieldinfo': {'fieldcard': 3, 'fieldcoins': 0}, 'end_flg': 'False'}}}
+{'type': 'notice_player_action', 'payload': {'pname': 'p2', 'action': 'pick'}}
+{'type': 'notice_draw_card', 'payload': {'next_card': 4}}
+{'type': 'information_game', 'payload': {'game_status': {'turnnum': 4, 'turnorder': ['p2', 'p1'], 'rankingorder': ['p1', 'p2'], 'playerinfo': {'p1': {'coins': 11, 'cards': [2], 'point': -9}, 'p2': {'coins': 9, 'cards': [3], 'point': -6}}, 'deckinfo': {'decknum': 2}, 'fieldinfo': {'fieldcard': 4, 'fieldcoins': 0}, 'end_flg': 'False'}}}
+{'type': 'notice_player_action', 'payload': {'pname': 'p1', 'action': 'pass'}}
+{'type': 'information_game', 'payload': {'game_status': {'turnnum': 5, 'turnorder': ['p1', 'p2'], 'rankingorder': ['p1', 'p2'], 'playerinfo': {'p1': {'coins': 10, 'cards': [2], 'point': -8}, 'p2': {'coins': 9, 'cards': [3], 'point': -6}}, 'deckinfo': {'decknum': 2}, 'fieldinfo': {'fieldcard': 4, 'fieldcoins': 1}, 'end_flg': 'False'}}}
+{'type': 'notice_player_action', 'payload': {'pname': 'p2', 'action': 'pass'}}
+{'type': 'information_game', 'payload': {'game_status': {'turnnum': 6, 'turnorder': ['p2', 'p1'], 'rankingorder': ['p1', 'p2'], 'playerinfo': {'p1': {'coins': 10, 'cards': [2], 'point': -8}, 'p2': {'coins': 8, 'cards': [3], 'point': -5}}, 'deckinfo': {'decknum': 2}, 'fieldinfo': {'fieldcard': 4, 'fieldcoins': 2}, 'end_flg': 'False'}}}
+{'type': 'notice_player_action', 'payload': {'pname': 'p1', 'action': 'pass'}}
+{'type': 'information_game', 'payload': {'game_status': {'turnnum': 7, 'turnorder': ['p1', 'p2'], 'rankingorder': ['p1', 'p2'], 'playerinfo': {'p1': {'coins': 9, 'cards': [2], 'point': -7}, 'p2': {'coins': 8, 'cards': [3], 'point': -5}}, 'deckinfo': {'decknum': 2}, 'fieldinfo': {'fieldcard': 4, 'fieldcoins': 3}, 'end_flg': 'False'}}}
+{'type': 'notice_player_action', 'payload': {'pname': 'p2', 'action': 'pick'}}
+{'type': 'notice_draw_card', 'payload': {'next_card': 5}}
+{'type': 'information_game', 'payload': {'game_status': {'turnnum': 8, 'turnorder': ['p2', 'p1'], 'rankingorder': ['p2', 'p1'], 'playerinfo': {'p1': {'coins': 9, 'cards': [2], 'point': -7}, 'p2': {'coins': 11, 'cards': [3, 4], 'point': -8}}, 'deckinfo': {'decknum': 1}, 'fieldinfo': {'fieldcard': 5, 'fieldcoins': 0}, 'end_flg': 'False'}}}
+{'type': 'notice_player_action', 'payload': {'pname': 'p1', 'action': 'pick'}}
+{'type': 'notice_draw_card', 'payload': {'next_card': 1}}
+{'type': 'information_game', 'payload': {'game_status': {'turnnum': 9, 'turnorder': ['p1', 'p2'], 'rankingorder': ['p2', 'p1'], 'playerinfo': {'p1': {'coins': 9, 'cards': [2, 5], 'point': -2}, 'p2': {'coins': 11, 'cards': [3, 4], 'point': -8}}, 'deckinfo': {'decknum': 0}, 'fieldinfo': {'fieldcard': 1, 'fieldcoins': 0}, 'end_flg': 'False'}}}
+{'type': 'notice_player_action', 'payload': {'pname': 'p2', 'action': 'pick'}}
+{'type': 'notice_draw_card', 'payload': {'next_card': None}}

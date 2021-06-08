@@ -74,7 +74,7 @@ class Lobby():#static class #all socket enter here firstly and can choice enteri
     def game_end(gcon):#ロビーに戻ってくる
         for s in gcon.get_sockets_list():
             Lobby.enter_lobby(s)
-        
+        print("Debug"+Lobby.rooms)
         for k,v in Lobby.rooms.items():#遊んでた部屋の削除
             if v == gcon:
                 Lobby.rooms.pop(k)
@@ -107,6 +107,7 @@ class GameController(threading.Thread):
     def add_viewer(self,viewer):
         self.viewers.append(viewer)
         return "Add ok"
+
     #override
     def run(self):# wait since players come after that start game
         while True:
@@ -157,7 +158,10 @@ class GameController(threading.Thread):
                     result = "declined"
                     reason = action_result
                 p.send_result_action(result,reason,self.game.getInfo())
-
+                for v in self.viewers:
+                    v.send_player_action(p.name,message["payload"]["action_type"])
+                    if message["payload"]["action_type"] == "pick":#pickなら次のカード情報を送る
+                        v.send_draw_card(self.game.fieldcard)
     def wait_message(self,p,type_str):# wait message change to anticipated type_str
         timecon = 0
         while True:
@@ -237,7 +241,16 @@ class Viewer():
             "type":"notice_end",
             "payload":{"game_status":info}
             }))
-
+    def send_player_action(self,pname,action):#playernameと行動経歴を返す
+        self.socket.send(json.dumps({
+            "type":"notice_player_action",
+            "payload":{"pname":pname,"action":action}
+            }))
+    def send_draw_card(self,next_card):#playernameと行動経歴を返す
+        self.socket.send(json.dumps({
+            "type":"notice_draw_card",
+            "payload":{"next_card":next_card}
+            }))
 
 class Socket(asyncio.Protocol):#gconとcmserverにsendとdatareceivedを渡すクラス
     def __init__(self):
@@ -289,7 +302,7 @@ class Socket(asyncio.Protocol):#gconとcmserverにsendとdatareceivedを渡す�
 
 def main():
     host = "localhost" #お使いのサーバーのホスト名を入れます
-    port = 1000 #クライアントで設定したPORTと同じもの指定してあげます
+    port = 2001 #クライアントで設定したPORTと同じもの指定してあげます
     
     Lobby.add_game_nothanks_normal("normal")#一回ゲームするだけのルーム
     Lobby.add_game_nothanks_learning("q",5000)#指定回数ゲームする学習用のルーム
