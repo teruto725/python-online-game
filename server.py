@@ -74,14 +74,16 @@ class Lobby():#static class #all socket enter here firstly and can choice enteri
     def game_end(gcon):#ロビーに戻ってくる
         for s in gcon.get_sockets_list():
             Lobby.enter_lobby(s)
-        print("Debug"+Lobby.rooms)
+        print("Debug"+str(Lobby.rooms))
+        temp = None
         for k,v in Lobby.rooms.items():#遊んでた部屋の削除
             if v == gcon:
-                Lobby.rooms.pop(k)
-                if gcon.mode == "normal":
-                    Lobby.add_game_nothanks_normal(k)
-                if gcon.mode == "learning":
-                    Lobby.add_game_nothanks_learning(k,gcon.epoc_num)
+                temp = k
+        Lobby.rooms.pop(temp)
+        if gcon.mode == "normal":
+            Lobby.add_game_nothanks_normal(temp)
+        if gcon.mode == "learning":
+            Lobby.add_game_nothanks_learning(temp,gcon.epoc_num)
 
 
 class GameController(threading.Thread):
@@ -302,7 +304,7 @@ class Socket(asyncio.Protocol):#gconとcmserverにsendとdatareceivedを渡す�
 
 def main():
     host = "localhost" #お使いのサーバーのホスト名を入れます
-    port = 2001 #クライアントで設定したPORTと同じもの指定してあげます
+    port = 2004 #クライアントで設定したPORTと同じもの指定してあげます
     
     Lobby.add_game_nothanks_normal("normal")#一回ゲームするだけのルーム
     Lobby.add_game_nothanks_learning("q",5000)#指定回数ゲームする学習用のルーム
