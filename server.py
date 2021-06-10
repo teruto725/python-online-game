@@ -318,10 +318,11 @@ def main():
     try:
         ev_loop.run_forever()
     finally:
+        print("finally")
         server.close()
         ev_loop.run_until_complete(server.wait_closed())
         ev_loop.close()
-
+    
 
 if __name__ == '__main__':
     main()
